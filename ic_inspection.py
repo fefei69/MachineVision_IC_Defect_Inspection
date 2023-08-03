@@ -175,131 +175,132 @@ def find_via(img2):
 
 
 
+def main():
+    '''
+    read image
+    '''
+    icpath = "./ic_image"
+    file_name1 = "good IC mark.bmp"
+    file_name2 = "via10.bmp"#bad IC mark3.bmp" #"via10.bmp"  #"bad IC mark1.bmp"  via10
+    goodICmark = cv2.imread(os.path.join(icpath,file_name1),-1)
+    goodICmark_resized = cv2.resize(goodICmark,(640,480))
+    #input image should be in grayscale (1 channel)
+    img1 = cv2.cvtColor(goodICmark_resized, cv2.COLOR_BGR2GRAY)
+    img2_org = cv2.imread(os.path.join(icpath,file_name2),-1)
 
-'''
-read image
-'''
-icpath = "./ic_image"
-file_name1 = "good IC mark.bmp"
-file_name2 = "via10.bmp"#bad IC mark3.bmp" #"via10.bmp"  #"bad IC mark1.bmp"  via10
-goodICmark = cv2.imread(os.path.join(icpath,file_name1),-1)
-goodICmark_resized = cv2.resize(goodICmark,(640,480))
-#input image should be in grayscale (1 channel)
-img1 = cv2.cvtColor(goodICmark_resized, cv2.COLOR_BGR2GRAY)
-img2_org = cv2.imread(os.path.join(icpath,file_name2),-1)
+    print("shape of img1",img1.shape,"shape of img2_org",img2_org.shape )
+    #cv2.imshow("img1",img2_org)
+    # cv2.imshow("can",img1_via)
+    # cv2.imshow("r",img2_via)
+    #cv2.waitKey(0)
+    '''
+    make 3 channels to show where the defect is with colors 
+    '''
+    img2_org_3ch = make_3_channels(img2_org)
+    '''
+    crop the original image to get a ideal image
+    '''
+    img1_crp = img1[120:250,240:460]
+    img2_crp = img2_org[120:250,240:460]
+    #gaussian kernel
+    gau = gaussian_kernel(5)
+    #gaussian blur
+    img1_blur = convolution(img1_crp,gau,normalize=True) 
+    img2_blur = convolution(img2_crp,gau,normalize=True)
+    # print("shape of img1_blur",img1_blur.shape)
+    # print("shape of img2_blur",img2_blur.shape)
+    # cv2.imshow("blurred img1",img1_blur)
+    # cv2.imshow("blurred img2",img2_blur)
+    # cv2.waitKey(0)
+    img1_blur_th = customed_threshold(img1_blur)
+    img2_blur_th = customed_threshold(img2_blur)
 
-print("shape of img1",img1.shape,"shape of img2_org",img2_org.shape )
-#cv2.imshow("img1",img2_org)
-# cv2.imshow("can",img1_via)
-# cv2.imshow("r",img2_via)
-#cv2.waitKey(0)
-'''
-make 3 channels to show where the defect is with colors 
-'''
-img2_org_3ch = make_3_channels(img2_org)
-'''
-crop the original image to get a ideal image
-'''
-img1_crp = img1[120:250,240:460]
-img2_crp = img2_org[120:250,240:460]
-#gaussian kernel
-gau = gaussian_kernel(5)
-#gaussian blur
-img1_blur = convolution(img1_crp,gau,normalize=True) 
-img2_blur = convolution(img2_crp,gau,normalize=True)
-# print("shape of img1_blur",img1_blur.shape)
-# print("shape of img2_blur",img2_blur.shape)
-# cv2.imshow("blurred img1",img1_blur)
-# cv2.imshow("blurred img2",img2_blur)
-# cv2.waitKey(0)
-img1_blur_th = customed_threshold(img1_blur)
-img2_blur_th = customed_threshold(img2_blur)
-
-img1 = laplacian(img1_blur_th,kernel_num="laplacian")
-img2 = laplacian(img2_blur_th,kernel_num="laplacian")
-#cv2.imshow("img1",img2)
-# cv2.imshow("can",img1_via)
-# cv2.imshow("r",img2_via)
-#cv2.waitKey(0)
-# img1 = img1_blur_th
-# img2 = img2_blur_th
-print(img1.shape,img2.shape)
-
-
-
-img1_via,pos1 = find_via(img1)
-img2_via,pos2 = find_via(img2)           
-print("img2 shape",img2_via.shape,"img1 shape",img1_via.shape)
-#cv2.imshow("img1",img1)
-# cv2.imshow("can",img1_via)
-# cv2.imshow("r",img2_via)
-# cv2.waitKey(0)
-
-'''
-preprocessing
-'''
-
-'''
-also works . just a little bit nosie ....
-'''
-#kernel = np.ones((3,3), np.uint8)
-#黑白反轉 reverse black and white 
-# th_canny_img = 255-cv2.dilate(img1_via, kernel, iterations = 1)
-# th_canny_img2 = 255-cv2.dilate(img2_via, kernel, iterations = 1)
-
-th_canny_img = 255-dilate(img1_via)#255-img1_via#255-dilate(img1_via)
-th_canny_img2 = 255-dilate(img2_via)#255-img2_via#255-dilate(img2_via)
-# cv2.imshow("can",th_canny_img)
-# cv2.imshow("r",th_canny_img2)
-# cv2.waitKey(0)
+    img1 = laplacian(img1_blur_th,kernel_num="laplacian")
+    img2 = laplacian(img2_blur_th,kernel_num="laplacian")
+    #cv2.imshow("img1",img2)
+    # cv2.imshow("can",img1_via)
+    # cv2.imshow("r",img2_via)
+    #cv2.waitKey(0)
+    # img1 = img1_blur_th
+    # img2 = img2_blur_th
+    print(img1.shape,img2.shape)
 
 
-ar = np.array(th_canny_img)
-th_canny_img2 = np.array(th_canny_img2)
-minus = ar - th_canny_img2
-print("shape of minus",minus.shape)
-#kernel = np.ones((3,3), np.uint8)
-#erosion = erode(minus)#cv2.erode(minus, kernel, iterations = 1)
-kernel = np.ones((3,3), np.uint8)
-erosion = erode(minus)
-#erosion = cv2.erode(minus, kernel, iterations = 1)
-# cv2.imshow("err",erosion)
-# cv2.waitKey(0)
-dilation = dilate(erosion)
-# cv2.imshow("minus",minus)
-# cv2.imshow("dilation",dilation)
-# cv2.waitKey(0)
-#dilation = cv2.dilate(erosion, kernel, iterations = 1)
-z = 0
-for x in range(dilation.shape[1]):
-    for y in range(dilation.shape[0]):
-        #print(mi[y][x])
-        if dilation[y][x] == 255: #via10 : 104 bad ic mark1:94  bad IC mark2:161
-            i , j = pos2
-            cv2.circle(img2_org_3ch,(240+j+x,120+i+y+5),1,(0,0,255),-1)
-            #print(y+i,x+j)
-            z+=1
-if z > 60:
-    cv2.putText(img2_org_3ch,"bad IC mark!!",(220,100), cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,255),1)
-    print("bad ic mark")
-else:
-    cv2.putText(img2_org_3ch,"good IC mark!!",(220,100), cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),1)
-    print("good IC mark!!")
 
-white_pixels_img1 = compute_pixels(img1_via)
-white_pixels_img2 = compute_pixels(img2_via)
-print("white pixels of img1",white_pixels_img1)
-print("white pixels of img2",white_pixels_img2)
-print(z)
-if white_pixels_img2 > white_pixels_img1 :
-    print("method2 - also shows bad ic mark")
+    img1_via,pos1 = find_via(img1)
+    img2_via,pos2 = find_via(img2)           
+    print("img2 shape",img2_via.shape,"img1 shape",img1_via.shape)
+    #cv2.imshow("img1",img1)
+    # cv2.imshow("can",img1_via)
+    # cv2.imshow("r",img2_via)
+    # cv2.waitKey(0)
+
+    '''
+    preprocessing
+    '''
+
+    '''
+    also works . just a little bit nosie ....
+    '''
+    #kernel = np.ones((3,3), np.uint8)
+    #黑白反轉 reverse black and white 
+    # th_canny_img = 255-cv2.dilate(img1_via, kernel, iterations = 1)
+    # th_canny_img2 = 255-cv2.dilate(img2_via, kernel, iterations = 1)
+
+    th_canny_img = 255-dilate(img1_via)#255-img1_via#255-dilate(img1_via)
+    th_canny_img2 = 255-dilate(img2_via)#255-img2_via#255-dilate(img2_via)
+    # cv2.imshow("can",th_canny_img)
+    # cv2.imshow("r",th_canny_img2)
+    # cv2.waitKey(0)
 
 
-#cv2.imshow("err",erosion)    
-#cv2.imshow('minus',minus)
-#cv2.imshow('dilation - defect only',dilation)
-#cv2.imwrite("goodimage.jpg",img2_org_3ch)
-cv2.imshow("your input image",img2_org)
-cv2.imshow("defect image",img2_org_3ch)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    ar = np.array(th_canny_img)
+    th_canny_img2 = np.array(th_canny_img2)
+    minus = ar - th_canny_img2
+    print("shape of minus",minus.shape)
+    #kernel = np.ones((3,3), np.uint8)
+    #erosion = erode(minus)#cv2.erode(minus, kernel, iterations = 1)
+    kernel = np.ones((3,3), np.uint8)
+    erosion = erode(minus)
+    #erosion = cv2.erode(minus, kernel, iterations = 1)
+    # cv2.imshow("err",erosion)
+    # cv2.waitKey(0)
+    dilation = dilate(erosion)
+    # cv2.imshow("minus",minus)
+    # cv2.imshow("dilation",dilation)
+    # cv2.waitKey(0)
+    #dilation = cv2.dilate(erosion, kernel, iterations = 1)
+    z = 0
+    for x in range(dilation.shape[1]):
+        for y in range(dilation.shape[0]):
+            #print(mi[y][x])
+            if dilation[y][x] == 255: #via10 : 104 bad ic mark1:94  bad IC mark2:161
+                i , j = pos2
+                cv2.circle(img2_org_3ch,(240+j+x,120+i+y+5),1,(0,0,255),-1)
+                #print(y+i,x+j)
+                z+=1
+    if z > 60:
+        cv2.putText(img2_org_3ch,"bad IC mark!!",(220,100), cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,255),1)
+        print("bad ic mark")
+    else:
+        cv2.putText(img2_org_3ch,"good IC mark!!",(220,100), cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),1)
+        print("good IC mark!!")
+
+    white_pixels_img1 = compute_pixels(img1_via)
+    white_pixels_img2 = compute_pixels(img2_via)
+    print("white pixels of img1",white_pixels_img1)
+    print("white pixels of img2",white_pixels_img2)
+    print(z)
+    if white_pixels_img2 > white_pixels_img1 :
+        print("method2 - also shows bad ic mark")
+    #cv2.imshow("err",erosion)    
+    #cv2.imshow('minus',minus)
+    #cv2.imshow('dilation - defect only',dilation)
+    #cv2.imwrite("goodimage.jpg",img2_org_3ch)
+    cv2.imshow("your input image",img2_org)
+    cv2.imshow("defect image",img2_org_3ch)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
+if __name__ == '__main__':
+    main()

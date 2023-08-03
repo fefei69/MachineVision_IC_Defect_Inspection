@@ -1,5 +1,5 @@
 # MachineVision_IC_Defect_Inspection
-Ic chips defect inspection without directly using CV library to detect the imperfect marks on the chips. 
+Ic chips defect inspection without directly using any CV library to detect the imperfect marks on the chips. 
 ## Overview 
 ![mid_flow](https://user-images.githubusercontent.com/69750888/207832813-c1c4161c-33b1-4def-9fe0-965caf32f593.png)
 
