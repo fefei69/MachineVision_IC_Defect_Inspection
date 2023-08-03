@@ -22,8 +22,8 @@ def gaussian_kernel(size, sigma=1):
     g =  np.exp(-((x**2 + y**2) / (2.0*sigma**2))) * normal
     return g
 
-def ben_threshold(img):
-    for j in range(img.shape[1]): #由上到下掃描
+def customed_threshold(img):
+    for j in range(img.shape[1]): #scan from top to the bottom
         for i in range(img.shape[0]):
             if img[i][j] > 150:
                 img[i][j] = 255
@@ -81,6 +81,7 @@ def convolution(image,kernel,normalize):
     # fetch the dimensions for iteration over the pixels and weights
     i_width, i_height = image.shape[0], image.shape[1]
     k_width, k_height = kernel.shape[0], kernel.shape[1]
+    print("Convolution height & width of the input and the kernel :")
     print(i_width,i_height,k_width,k_height)
     # prepare the output array
     filtered = np.zeros_like(image)
@@ -154,7 +155,7 @@ def compute_pixels(img):
 
 
 def make_3_channels (img2_org):
-    img2_org = ben_threshold(img2_org)
+    img2_org = customed_threshold(img2_org)
     #img2_org = canny(img2_org)
     img2 = np.zeros( ( np.array(img2_org).shape[0], np.array(img2_org).shape[1], 3 ) )
     img2_org = np.array(img2_org)
@@ -162,14 +163,32 @@ def make_3_channels (img2_org):
     img2[:,:,1] = img2_org
     img2[:,:,2] = img2_org
     return img2
+
+def find_via(img2):
+    for i in range(img2.shape[0]): #由上到下掃描
+        for j in range(img2.shape[1]):
+            if img2[i][j] - img2[i][j-1] != 0:
+                print(i,j)
+                pos = (i,j)
+                img2_via = img2[i:i+70,j:j+185]      
+                return img2_via,pos
+
+
+
+
 '''
 read image
 '''
-icpath = "C:/vscode/machinevision_project/ic_defect_inspection"
+icpath = "./ic_image"
 file_name1 = "good IC mark.bmp"
-file_name2 = "via6.bmp"#bad IC mark3.bmp" #"via10.bmp"  #"bad IC mark1.bmp"  via10
-img1 = cv2.imread(os.path.join(icpath,file_name1),-1)
+file_name2 = "via10.bmp"#bad IC mark3.bmp" #"via10.bmp"  #"bad IC mark1.bmp"  via10
+goodICmark = cv2.imread(os.path.join(icpath,file_name1),-1)
+goodICmark_resized = cv2.resize(goodICmark,(640,480))
+#input image should be in grayscale (1 channel)
+img1 = cv2.cvtColor(goodICmark_resized, cv2.COLOR_BGR2GRAY)
 img2_org = cv2.imread(os.path.join(icpath,file_name2),-1)
+
+print("shape of img1",img1.shape,"shape of img2_org",img2_org.shape )
 #cv2.imshow("img1",img2_org)
 # cv2.imshow("can",img1_via)
 # cv2.imshow("r",img2_via)
@@ -188,27 +207,25 @@ gau = gaussian_kernel(5)
 #gaussian blur
 img1_blur = convolution(img1_crp,gau,normalize=True) 
 img2_blur = convolution(img2_crp,gau,normalize=True)
-img1_blur_th = ben_threshold(img1_blur)
-img2_blur_th = ben_threshold(img2_blur)
+# print("shape of img1_blur",img1_blur.shape)
+# print("shape of img2_blur",img2_blur.shape)
+# cv2.imshow("blurred img1",img1_blur)
+# cv2.imshow("blurred img2",img2_blur)
+# cv2.waitKey(0)
+img1_blur_th = customed_threshold(img1_blur)
+img2_blur_th = customed_threshold(img2_blur)
 
 img1 = laplacian(img1_blur_th,kernel_num="laplacian")
 img2 = laplacian(img2_blur_th,kernel_num="laplacian")
-cv2.imshow("img1",img2)
+#cv2.imshow("img1",img2)
 # cv2.imshow("can",img1_via)
 # cv2.imshow("r",img2_via)
-cv2.waitKey(0)
+#cv2.waitKey(0)
 # img1 = img1_blur_th
 # img2 = img2_blur_th
 print(img1.shape,img2.shape)
 
-def find_via(img2):
-    for i in range(img2.shape[0]): #由上到下掃描
-        for j in range(img2.shape[1]):
-            if img2[i][j] - img2[i][j-1] != 0:
-                print(i,j)
-                pos = (i,j)
-                img2_via = img2[i:i+70,j:j+185]      
-                return img2_via,pos
+
 
 img1_via,pos1 = find_via(img1)
 img2_via,pos2 = find_via(img2)           
@@ -217,8 +234,6 @@ print("img2 shape",img2_via.shape,"img1 shape",img1_via.shape)
 # cv2.imshow("can",img1_via)
 # cv2.imshow("r",img2_via)
 # cv2.waitKey(0)
-
-
 
 '''
 preprocessing
@@ -284,6 +299,7 @@ if white_pixels_img2 > white_pixels_img1 :
 #cv2.imshow('minus',minus)
 #cv2.imshow('dilation - defect only',dilation)
 #cv2.imwrite("goodimage.jpg",img2_org_3ch)
+cv2.imshow("your input image",img2_org)
 cv2.imshow("defect image",img2_org_3ch)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
